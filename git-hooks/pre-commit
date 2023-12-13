@@ -1,0 +1,14 @@
+#!/bin/bash
+source etkilesim
+
+precommitBaslik="$urtotm_dialogBaslik - pre-commit"
+if command -v tersara &> /dev/null; then
+	# TODO Bash testi için yapılandır
+	echo "Test çalışıyor"
+	testSonucu=$?
+	echo Test sonucu $testSonucu
+	exit $testSonucu
+else
+	mesajGoster hata "$precommitBaslik" "'tersara' betiği '$PATH' yollarında bulunamadığından pre-commit kancası iptal oldu."
+	exit 1
+fi

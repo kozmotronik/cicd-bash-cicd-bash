@@ -1,0 +1,5 @@
+# Sondaki '/' karakteri rsync nin yalnızca bu addaki dizinleri
+# filtrelemesini sağlar 
+
+test-proje/
+integration/

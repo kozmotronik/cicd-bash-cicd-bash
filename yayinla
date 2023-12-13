@@ -1,0 +1,77 @@
+#!/bin/bash 
+# 
+# post-merge kancası tarafından çağrılması beklenir. Yayınlama betiğini çağıran kanca, yeni sürüm 
+# numarasıyla birlikte çağırmalıdır.
+# $1: Sürüm numarası
+
+# MPLABX için yayınlama işlemleri
+source etkilesim # Buradan yalnızca etkilesim işlevleri çağrıldığı için source etmek gerekiyor
+
+yayinlaBaslik="$urtotm_dialogBaslik - Yayınla"
+
+# Üretim dizinleri
+# ATTENTION Üretim dizinlerinde oluşturulacak platform alt dizinleri, hedef platformu belirtmelidir.
+# Örneğin urtotm-bash, mplabx platfomu için kurulacaksa, üretim alt dizinleri mplabx olmalıdır.
+# $platform değişkeni urtotm-bash, yani ilgili üretim otomasyonu platformunun üretim otomasyonunu
+# temsil eder.
+surumlerDizini="${urtotm_uretimDizini}/üretim/sürümler/${urtotm_projeAdi}"
+ensonSurumDizini="${urtotm_uretimDizini}/üretim/ensonsürüm/${urtotm_projeAdi}"
+
+if [ ! -d "$surumlerDizini" ]; then
+    mkdir -p "$surumlerDizini" # ürünler dizini yoksa yarat
+fi
+
+if [ ! -d "$ensonSurumDizini" ]; then
+    mkdir -p "$ensonSurumDizini" # ürünler dizini yoksa yarat
+fi
+
+# Yayınlanan sürümler dizini
+# Yayınlama aşamasına gelmeden projenin ilgili sürümünün [urtotm_yedekDizini] içerisine görüntüsünün
+# alınmış olması beklenir. Normalde goruntu betiği bu değişkeni, diğer üretim otomasyonu 
+# betiklerine görünür olması için export eder. Ancak yine de yoklamak en iyisi.
+if [[ ! -e $projeGoruntuArsivi ]]; then
+# Bu kabuk oturumunda proje görüntü arşivi tanımlanmamış, burada sürüm numarasına göre ara.
+# Arama kriteri; dosyanın 10 dakika veya daha az bir süre içinde değiştirilmiş olması.
+# find Yedekler -type f -name "[proe adı]*[sürüm no]*.zip" -mmin -10*
+    projeGoruntuArsivi=$(find "$urtotm_yedekDizini" -type f -name "${urtotm_projeAdi}*${1}*.zip" -mmin -10 | head -1)
+    echo "Proje görüntü arşivi bul: $projeGoruntuArsivi"
+    if [[ -z "$projeGoruntuArsivi" ]]; then
+        # Bulunan arşiv sürüm numarası içermiyor
+        mesajGoster hata "$yayinlaBaslik" "Yedek dizininde sürüm numarası içeren bir görüntü arşivi bulunamadı!"
+        exit 1
+    fi
+    projeGoruntuArsivi=$(realpath "$projeGoruntuArsivi") # tam yolu al
+    echo "Proje arşivi tam yolu: $projeGoruntuArsivi" 
+fi
+cp "$projeGoruntuArsivi" "$surumlerDizini"
+projeSurumArsivi="${projeGoruntuArsivi##*/}"
+echo "projeSurumArsivi $projeSurumArsivi"
+
+# projeGoruntuArsivi girdisini urtotm_projeUrtotmEnv dosyasından sil
+sed -i '/^export projeGoruntuArsivi*/d' "$urtotm_projeUrtotmEnv"
+
+# ensonsürüm dizninde ne varsa temizle ve son sürümü kopyala
+# ATTENTION '*' karakteri litreal içerisine alınırsa genişletilmez. Örneğin
+# rm -f "$ensonSurumDizini/*" kabuk tarafından bir literal karakter olarak tanınacak ve
+# genişletilmeyecektir. Dolayısıyla rm komutu '*' adında bir dosya bulamayacağından hiçbir şey
+# silmez. Bu nedenle '*' wildcard olarak kullanılmak isteniyorsa, tırnak içine alınmamalıdır.
+rm -f "$ensonSurumDizini/"*
+
+# Ürün işlemleri
+# find komutu bulunan dizinleri listelemeye en alt dizinlerden başlıyor gibi. Bu yüzden hedefin 
+# alt dizinlerinde başka repolar varsa önce alt dizindeki repoların hooks dizinlerini listeler.
+# Biz burada projenin kendi git reposu ile ilgilendiğimiz için yalnızca projenin reposunun
+# hooks dizinini alacağız. Birden fazla repo olması durumunda projenin reposu en altta olacağı
+# için tail -1 komutuya en sondan birinci çıktıyı alacağız. tail komutu yalnızca bir repo olduğu
+# durumda da sorun yaratmayacaktır.
+gitReposu="$(find "$urtotm_projeDizini" -type d -name .git | tail -1)"
+if [[ -z $gitReposu ]]; then
+    mesajGoster hata "$yayinlaBaslik" "$urtotm_projeDizini proje dizininde bir git reposu bulunamadı!"
+    exit 1
+fi
+
+if ! GIT_DIR="$gitReposu" git archive main ':!test*/*' | tar -xf - -C "$ensonSurumDizini"
+then
+    mesajGoster hata "$yayinlaBaslik" "$urtotm_projeAdi projesinin enson sürüm üretimi sırasında hata oluştu!"
+    exit 1
+fi
