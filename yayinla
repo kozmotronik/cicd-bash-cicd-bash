@@ -58,7 +58,7 @@ sed -i '/^export projeGoruntuArsivi*/d' "$urtotm_projeUrtotmenv"
 # rm -f "$ensonSurumDizini/*" kabuk tarafından bir literal karakter olarak tanınacak ve
 # genişletilmeyecektir. Dolayısıyla rm komutu '*' adında bir dosya bulamayacağından hiçbir şey
 # silmez. Bu nedenle '*' wildcard olarak kullanılmak isteniyorsa, tırnak içine alınmamalıdır.
-rm -f "${ensonSurumDizini}/"*
+rm -rf "${ensonSurumDizini}/"*
 
 # Ürün işlemleri
 # find komutu bulunan dizinleri listelemeye en alt dizinlerden başlıyor gibi. Bu yüzden hedefin 
@@ -96,7 +96,7 @@ elif [[ ! "$urtotm_projeAdi" =~ [Kk]urulum ]]; then
     # urtotm Kurulum projesinin şimdilik bir hedefi yok, mevcut projenin kurulum olmadığından
     # emin ol.
     # Güncellenecekler listesini yokla ve gerekli hedefleri güncelle
-    guncellemeDosyasi=$(find "$ensonSurumDizini" -type f -name .guncellemeListesi)
+    guncellemeDosyasi=$(find "$ensonSurumDizini" -type f -name .guncellemeListesi | tail -1)
     if [[ -e $guncellemeDosyasi && -f $guncellemeDosyasi ]]; then
         # Kayıtlı hedeflerin üretim otomasyonunu güncelleme betiği güncelle
         guncelle "$ensonSurumDizini" "$(awk -v plt="$urtotm_platform" -F'::' '$1 == plt {print $3}' "$guncellemeDosyasi" | xargs)"
