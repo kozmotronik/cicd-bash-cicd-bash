@@ -7,17 +7,17 @@ export urtotm_projeUrtotmDizini=/disk/Projeler/UretimOtomasyonu/Bash/UretimOtoma
 path=:/disk/Projeler/UretimOtomasyonu/Bash/UretimOtomasyonu/araclar
 path+=:/disk/Projeler/UretimOtomasyonu/Bash/UretimOtomasyonu/urtotm-bash
 path+=:/disk/Projeler/UretimOtomasyonu/Bash/UretimOtomasyonu/urtotm-bash/git-hooks
-urtotm_projeUrtotmEnv="${urtotm_projeUrtotmDizini}/urtotmenv"
-urtotm_projeAdi="TestUnit-MPLABX-Proje"
+urtotm_projeUrtotmenv="${urtotm_projeUrtotmDizini}/urtotmenv"
+urtotm_projeAdi="TestUnit-Urtotm-Araclar"
 # Yoksa, urtotm_projeUrtotmEnv yapılandırma dosyasını oluştur
-cat <<- SON > "$urtotm_projeUrtotmEnv"
+cat <<- SON > "$urtotm_projeUrtotmenv"
 export PATH+=$path
 export urtotm_uretimDizini=/disk/Projeler/UretimOtomasyonu/Bash/UretimOtomasyonu/urtotm-bash/test/unit/test-proje
 export urtotm_projeDizini=/disk/Projeler/UretimOtomasyonu/Bash/UretimOtomasyonu/urtotm-bash/test/unit/test-proje/araclar
 export urtotm_yedekDizini=/disk/Projeler/UretimOtomasyonu/Bash/UretimOtomasyonu/urtotm-bash/test/unit/test-proje/yedekler
-export urtotm_projeAdi=Test-MPLAB-Proje
+export urtotm_projeAdi=$urtotm_projeAdi
 export urtotm_dialogBaslik="$urtotm_projeAdi - urtotm"
-export urtotm_projeUrtotmEnv=$urtotm_projeUrtotmEnv
+export urtotm_projeUrtotmenv=$urtotm_projeUrtotmenv
 SON
 
-source "$urtotm_projeUrtotmEnv"
+source "$urtotm_projeUrtotmenv"

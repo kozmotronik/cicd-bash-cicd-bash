@@ -17,11 +17,11 @@ yayinlaBaslik="$urtotm_dialogBaslik - Yayınla"
 surumlerDizini="${urtotm_uretimDizini}/üretim/sürümler/${urtotm_projeAdi}"
 ensonSurumDizini="${urtotm_uretimDizini}/üretim/ensonsürüm/${urtotm_projeAdi}"
 
-if [ ! -d "$surumlerDizini" ]; then
+if [[ ! -e "$surumlerDizini" || ! -d "$surumlerDizini" ]]; then
     mkdir -p "$surumlerDizini" # ürünler dizini yoksa yarat
 fi
 
-if [ ! -d "$ensonSurumDizini" ]; then
+if [[ ! -e "$ensonSurumDizini" || ! -d "$ensonSurumDizini" ]]; then
     mkdir -p "$ensonSurumDizini" # ürünler dizini yoksa yarat
 fi
 
@@ -33,7 +33,10 @@ if [[ ! -e $projeGoruntuArsivi ]]; then
 # Bu kabuk oturumunda proje görüntü arşivi tanımlanmamış, burada sürüm numarasına göre ara.
 # Arama kriteri; dosyanın 10 dakika veya daha az bir süre içinde değiştirilmiş olması.
 # find Yedekler -type f -name "[proe adı]*[sürüm no]*.zip" -mmin -10*
-    projeGoruntuArsivi=$(find "$urtotm_yedekDizini" -type f -name "${urtotm_projeAdi}*${1}*.zip" -mmin -10 | head -1)
+# ATTENTION find en yeni olanı en son listeler.
+    echo "Proje adı: [$urtotm_projeAdi], sürüm: [$1]"
+    echo "Yedek dizini: [$urtotm_yedekDizini]"
+    projeGoruntuArsivi=$(find "$urtotm_yedekDizini" -type f -name "${urtotm_projeAdi}*${1}*.zip" -mmin -10 | tail -1)
     echo "Proje görüntü arşivi bul: $projeGoruntuArsivi"
     if [[ -z "$projeGoruntuArsivi" ]]; then
         # Bulunan arşiv sürüm numarası içermiyor
@@ -48,14 +51,14 @@ projeSurumArsivi="${projeGoruntuArsivi##*/}"
 echo "projeSurumArsivi $projeSurumArsivi"
 
 # projeGoruntuArsivi girdisini urtotm_projeUrtotmEnv dosyasından sil
-sed -i '/^export projeGoruntuArsivi*/d' "$urtotm_projeUrtotmEnv"
+sed -i '/^export projeGoruntuArsivi*/d' "$urtotm_projeUrtotmenv"
 
 # ensonsürüm dizninde ne varsa temizle ve son sürümü kopyala
 # ATTENTION '*' karakteri litreal içerisine alınırsa genişletilmez. Örneğin
 # rm -f "$ensonSurumDizini/*" kabuk tarafından bir literal karakter olarak tanınacak ve
 # genişletilmeyecektir. Dolayısıyla rm komutu '*' adında bir dosya bulamayacağından hiçbir şey
 # silmez. Bu nedenle '*' wildcard olarak kullanılmak isteniyorsa, tırnak içine alınmamalıdır.
-rm -f "$ensonSurumDizini/"*
+rm -f "${ensonSurumDizini}/"*
 
 # Ürün işlemleri
 # find komutu bulunan dizinleri listelemeye en alt dizinlerden başlıyor gibi. Bu yüzden hedefin 
@@ -74,4 +77,28 @@ if ! GIT_DIR="$gitReposu" git archive main ':!test*/*' | tar -xf - -C "$ensonSur
 then
     mesajGoster hata "$yayinlaBaslik" "$urtotm_projeAdi projesinin enson sürüm üretimi sırasında hata oluştu!"
     exit 1
+fi
+
+if [[ "$urtotm_projeAdi" =~ [Aa]raclar ]]; then
+    # Araçların güncelleme yapısı farklı, onu burada hallet
+    urtotmAraclarBinDizini=~/.bin/urtotm-araclar
+    if [[ -z "$urtotmAraclarBinDizini" || ! -d "$urtotmAraclarBinDizini" ]]; then
+        if [[ ! -e "$urtotmAraclarBinDizini" || ! -d "$urtotmAraclarBinDizini" ]]; then
+            mkdir -p "$urtotmAraclarBinDizini"
+        fi
+    fi
+    rsync -qa --delete "${ensonSurumDizini}/" "${urtotmAraclarBinDizini}/"
+    if [ ! $? ]; then
+        echo "Üretim otomasyonu araçları güncellemesi sırasında hata! rsync çıkış kodu: $?"
+        exit 1
+    fi
+elif [[ ! "$urtotm_projeAdi" =~ [Kk]urulum ]]; then
+    # urtotm Kurulum projesinin şimdilik bir hedefi yok, mevcut projenin kurulum olmadığından
+    # emin ol.
+    # Güncellenecekler listesini yokla ve gerekli hedefleri güncelle
+    guncellemeDosyasi=$(find "$ensonSurumDizini" -type f -name .guncellemeListesi)
+    if [[ -e $guncellemeDosyasi && -f $guncellemeDosyasi ]]; then
+        # Kayıtlı hedeflerin üretim otomasyonunu güncelleme betiği güncelle
+        guncelle "$ensonSurumDizini" "$(awk -v plt="$urtotm_platform" -F'::' '$1 == plt {print $3}' "$guncellemeDosyasi" | xargs)"
+    fi
 fi
