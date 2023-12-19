@@ -14,15 +14,15 @@ yayinlaBaslik="$urtotm_dialogBaslik - Yayınla"
 # Örneğin urtotm-bash, mplabx platfomu için kurulacaksa, üretim alt dizinleri mplabx olmalıdır.
 # $platform değişkeni urtotm-bash, yani ilgili üretim otomasyonu platformunun üretim otomasyonunu
 # temsil eder.
-surumlerDizini="${urtotm_uretimDizini}/üretim/sürümler/${urtotm_projeAdi}"
-ensonSurumDizini="${urtotm_uretimDizini}/üretim/ensonsürüm/${urtotm_projeAdi}"
+surumlerUrtotmProjeDizini="${urtotm_uretimDizini}/üretim/sürümler/${urtotm_projeAdi}"
+ensonSurumUrtotmProjeDizini="${urtotm_uretimDizini}/üretim/ensonsürüm/${urtotm_projeAdi}"
 
-if [[ ! -e "$surumlerDizini" || ! -d "$surumlerDizini" ]]; then
-    mkdir -p "$surumlerDizini" # ürünler dizini yoksa yarat
+if [[ ! -e "$surumlerUrtotmProjeDizini" || ! -d "$surumlerUrtotmProjeDizini" ]]; then
+    mkdir -p "$surumlerUrtotmProjeDizini" # ürünler dizini yoksa yarat
 fi
 
-if [[ ! -e "$ensonSurumDizini" || ! -d "$ensonSurumDizini" ]]; then
-    mkdir -p "$ensonSurumDizini" # ürünler dizini yoksa yarat
+if [[ ! -e "$ensonSurumUrtotmProjeDizini" || ! -d "$ensonSurumUrtotmProjeDizini" ]]; then
+    mkdir -p "$ensonSurumUrtotmProjeDizini" # ürünler dizini yoksa yarat
 fi
 
 # Yayınlanan sürümler dizini
@@ -46,7 +46,7 @@ if [[ ! -e $projeGoruntuArsivi ]]; then
     projeGoruntuArsivi=$(realpath "$projeGoruntuArsivi") # tam yolu al
     echo "Proje arşivi tam yolu: $projeGoruntuArsivi" 
 fi
-cp "$projeGoruntuArsivi" "$surumlerDizini"
+cp "$projeGoruntuArsivi" "$surumlerUrtotmProjeDizini"
 projeSurumArsivi="${projeGoruntuArsivi##*/}"
 echo "projeSurumArsivi $projeSurumArsivi"
 
@@ -55,10 +55,10 @@ sed -i '/^export projeGoruntuArsivi*/d' "$urtotm_projeUrtotmenv"
 
 # ensonsürüm dizninde ne varsa temizle ve son sürümü kopyala
 # ATTENTION '*' karakteri litreal içerisine alınırsa genişletilmez. Örneğin
-# rm -f "$ensonSurumDizini/*" kabuk tarafından bir literal karakter olarak tanınacak ve
+# rm -f "$ensonSurumUrtotmProjeDizini/*" kabuk tarafından bir literal karakter olarak tanınacak ve
 # genişletilmeyecektir. Dolayısıyla rm komutu '*' adında bir dosya bulamayacağından hiçbir şey
 # silmez. Bu nedenle '*' wildcard olarak kullanılmak isteniyorsa, tırnak içine alınmamalıdır.
-rm -rf "${ensonSurumDizini}/"*
+rm -rf "${ensonSurumUrtotmProjeDizini}/"*
 
 # Ürün işlemleri
 # find komutu bulunan dizinleri listelemeye en alt dizinlerden başlıyor gibi. Bu yüzden hedefin 
@@ -73,7 +73,7 @@ if [[ -z $gitReposu ]]; then
     exit 1
 fi
 
-if ! GIT_DIR="$gitReposu" git archive main ':!test*/*' | tar -xf - -C "$ensonSurumDizini"
+if ! GIT_DIR="$gitReposu" git archive main ':!test*/*' | tar -xf - -C "$ensonSurumUrtotmProjeDizini"
 then
     mesajGoster hata "$yayinlaBaslik" "$urtotm_projeAdi projesinin enson sürüm üretimi sırasında hata oluştu!"
     exit 1
@@ -82,23 +82,25 @@ fi
 if [[ "$urtotm_projeAdi" =~ [Aa]raclar ]]; then
     # Araçların güncelleme yapısı farklı, onu burada hallet
     urtotmAraclarBinDizini=~/.bin/urtotm-araclar
-    if [[ -z "$urtotmAraclarBinDizini" || ! -d "$urtotmAraclarBinDizini" ]]; then
-        if [[ ! -e "$urtotmAraclarBinDizini" || ! -d "$urtotmAraclarBinDizini" ]]; then
-            mkdir -p "$urtotmAraclarBinDizini"
+    if [[ ! -e "$urtotmAraclarBinDizini" || ! -d "$urtotmAraclarBinDizini" ]]; then
+        if ! mkdir -p "$urtotmAraclarBinDizini"; then
+            mesajGoster hata "$yayinlaBaslik" "$urtotm_projeAdi projesi için $urtotmAraclarBinDizini yaratılamadı.\nmkdir Hata kodu: $?" &
+            exit 1
         fi
     fi
-    rsync -qa --delete "${ensonSurumDizini}/" "${urtotmAraclarBinDizini}/"
-    if [ ! $? ]; then
-        echo "Üretim otomasyonu araçları güncellemesi sırasında hata! rsync çıkış kodu: $?"
+    if ! rsync -qa --delete "${ensonSurumUrtotmProjeDizini}/" "${urtotmAraclarBinDizini}/"; then
+        mesajGoster hata "$yayinlaBaslik" "$urtotm_projeAdi projesinin dosyaları hedefe kopyalanırken hata.\nrsync Hata kodu: $?" &
         exit 1
     fi
 elif [[ ! "$urtotm_projeAdi" =~ [Kk]urulum ]]; then
     # urtotm Kurulum projesinin şimdilik bir hedefi yok, mevcut projenin kurulum olmadığından
     # emin ol.
-    # Güncellenecekler listesini yokla ve gerekli hedefleri güncelle
+    # Güncellenecekler listesini yokla ve gerekli hedefleri güncelle.
+    # ATTENTION! Güncelleme listesini ensonsürüm dizininden aramaya başla
+    ensonSurumDizini="${ensonSurumUrtotmProjeDizini%/*}"
     guncellemeDosyasi=$(find "$ensonSurumDizini" -type f -name .guncellemeListesi | tail -1)
     if [[ -e $guncellemeDosyasi && -f $guncellemeDosyasi ]]; then
         # Kayıtlı hedeflerin üretim otomasyonunu güncelleme betiği güncelle
-        guncelle "$ensonSurumDizini" "$(awk -v plt="$urtotm_platform" -F'::' '$1 == plt {print $3}' "$guncellemeDosyasi" | xargs)"
+        guncelle "$ensonSurumUrtotmProjeDizini" "$(awk -v plt="$urtotm_projeAdi" -F'::' '$1 == plt {print $3}' "$guncellemeDosyasi" | xargs)"
     fi
 fi
