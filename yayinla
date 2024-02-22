@@ -101,6 +101,9 @@ elif [[ ! "$urtotm_projeAdi" =~ [Kk]urulum ]]; then
     guncellemeDosyasi=$(find "$ensonSurumDizini" -type f -name .guncellemeListesi | tail -1)
     if [[ -e $guncellemeDosyasi && -f $guncellemeDosyasi ]]; then
         # Kayıtlı hedeflerin üretim otomasyonunu güncelleme betiği güncelle
-        guncelle "$ensonSurumUrtotmProjeDizini" "$(awk -v plt="$urtotm_projeAdi" -F'::' '$1 == plt {print $3}' "$guncellemeDosyasi" | xargs)"
+        # Platform proje adını DEĞİL, yalnızca platform adını ver
+        guncelle "$ensonSurumUrtotmProjeDizini" "$(\
+            awk -v plt="${urtotm_projeAdi#$urtotm_platform-}" \
+            -F'::' '$1 == plt {print $3}' "$guncellemeDosyasi" | xargs)"
     fi
 fi
