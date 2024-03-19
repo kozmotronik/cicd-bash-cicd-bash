@@ -14,8 +14,8 @@ yayinlaBaslik="$urtotm_dialogBaslik - Yayınla"
 # Örneğin urtotm-bash, mplabx platfomu için kurulacaksa, üretim alt dizinleri mplabx olmalıdır.
 # $platform değişkeni urtotm-bash, yani ilgili üretim otomasyonu platformunun üretim otomasyonunu
 # temsil eder.
-surumlerUrtotmProjeDizini="${urtotm_uretimDizini}/üretim/sürümler/${urtotm_projeAdi}"
-ensonSurumUrtotmProjeDizini="${urtotm_uretimDizini}/üretim/ensonsürüm/${urtotm_projeAdi}"
+surumlerUrtotmProjeDizini="${urtotm_projeCiktiDizini}/üretim/sürümler/${urtotm_projeAdi}"
+ensonSurumUrtotmProjeDizini="${urtotm_projeCiktiDizini}/üretim/ensonsürüm/${urtotm_projeAdi}"
 
 if [[ ! -e "$surumlerUrtotmProjeDizini" || ! -d "$surumlerUrtotmProjeDizini" ]]; then
     mkdir -p "$surumlerUrtotmProjeDizini" # ürünler dizini yoksa yarat
@@ -26,7 +26,7 @@ if [[ ! -e "$ensonSurumUrtotmProjeDizini" || ! -d "$ensonSurumUrtotmProjeDizini"
 fi
 
 # Yayınlanan sürümler dizini
-# Yayınlama aşamasına gelmeden projenin ilgili sürümünün [urtotm_yedekDizini] içerisine görüntüsünün
+# Yayınlama aşamasına gelmeden projenin ilgili sürümünün [urtotm_projeYedeklemeDizini] içerisine görüntüsünün
 # alınmış olması beklenir. Normalde goruntu betiği bu değişkeni, diğer üretim otomasyonu 
 # betiklerine görünür olması için export eder. Ancak yine de yoklamak en iyisi.
 if [[ ! -e $projeGoruntuArsivi ]]; then
@@ -35,8 +35,8 @@ if [[ ! -e $projeGoruntuArsivi ]]; then
 # find Yedekler -type f -name "[proe adı]*[sürüm no]*.zip" -mmin -10*
 # ATTENTION find en yeni olanı en son listeler.
     echo "Proje adı: [$urtotm_projeAdi], sürüm: [$1]"
-    echo "Yedek dizini: [$urtotm_yedekDizini]"
-    projeGoruntuArsivi=$(find "$urtotm_yedekDizini" -type f -name "${urtotm_projeAdi}*${1}*.zip" -mmin -10 | tail -1)
+    echo "Yedek dizini: [$urtotm_projeYedeklemeDizini]"
+    projeGoruntuArsivi=$(find "$urtotm_projeYedeklemeDizini" -type f -name "${urtotm_projeAdi}*${1}*.zip" -mmin -10 | tail -1)
     echo "Proje görüntü arşivi bul: $projeGoruntuArsivi"
     if [[ -z "$projeGoruntuArsivi" ]]; then
         # Bulunan arşiv sürüm numarası içermiyor
@@ -81,7 +81,7 @@ fi
 
 if [[ "$urtotm_projeAdi" =~ [Aa]raclar ]]; then
     # Araçların güncelleme yapısı farklı, onu burada hallet
-    urtotmAraclarBinDizini=~/.bin/urtotm-araclar
+    urtotmAraclarBinDizini=~/.local/bin
     if [[ ! -e "$urtotmAraclarBinDizini" || ! -d "$urtotmAraclarBinDizini" ]]; then
         if ! mkdir -p "$urtotmAraclarBinDizini"; then
             mesajGoster hata "$yayinlaBaslik" "$urtotm_projeAdi projesi için $urtotmAraclarBinDizini yaratılamadı.\nmkdir Hata kodu: $?" &
