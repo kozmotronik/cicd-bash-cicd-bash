@@ -10,12 +10,8 @@ source etkilesim # Buradan yalnızca etkilesim işlevleri çağrıldığı için
 yayinlaBaslik="$urtotm_dialogBaslik - Yayınla"
 
 # Üretim dizinleri
-# ATTENTION Üretim dizinlerinde oluşturulacak platform alt dizinleri, hedef platformu belirtmelidir.
-# Örneğin urtotm-bash, mplabx platfomu için kurulacaksa, üretim alt dizinleri mplabx olmalıdır.
-# $platform değişkeni urtotm-bash, yani ilgili üretim otomasyonu platformunun üretim otomasyonunu
-# temsil eder.
-surumlerUrtotmProjeDizini="${urtotm_projeCiktiDizini}/üretim/sürümler/${urtotm_projeAdi}"
-ensonSurumUrtotmProjeDizini="${urtotm_projeCiktiDizini}/üretim/ensonsürüm/${urtotm_projeAdi}"
+surumlerUrtotmProjeDizini="${urtotm_projeCiktiDizini}/üretim/sürümler"
+ensonSurumUrtotmProjeDizini="${urtotm_projeCiktiDizini}/üretim/ensonsürüm"
 
 if [[ ! -e "$surumlerUrtotmProjeDizini" || ! -d "$surumlerUrtotmProjeDizini" ]]; then
     mkdir -p "$surumlerUrtotmProjeDizini" # ürünler dizini yoksa yarat
@@ -32,7 +28,7 @@ fi
 if [[ ! -e $projeGoruntuArsivi ]]; then
 # Bu kabuk oturumunda proje görüntü arşivi tanımlanmamış, burada sürüm numarasına göre ara.
 # Arama kriteri; dosyanın 10 dakika veya daha az bir süre içinde değiştirilmiş olması.
-# find Yedekler -type f -name "[proe adı]*[sürüm no]*.zip" -mmin -10*
+# find Yedekler -type f -name "[proje adı]*[sürüm no]*.zip" -mmin -10*
 # ATTENTION find en yeni olanı en son listeler.
     echo "Proje adı: [$urtotm_projeAdi], sürüm: [$1]"
     echo "Yedek dizini: [$urtotm_projeYedeklemeDizini]"
